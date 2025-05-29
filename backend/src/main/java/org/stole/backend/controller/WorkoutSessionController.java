@@ -7,24 +7,28 @@ import org.stole.backend.repository.WorkoutSessionRepository;
 
 import java.util.List;
 
+@CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/api/sessions")
-@CrossOrigin(origins = "http://localhost:5173")
 public class WorkoutSessionController {
 
     private final WorkoutSessionRepository repository;
 
     public WorkoutSessionController(WorkoutSessionRepository repository) {
         this.repository = repository;
+
     }
 
     @GetMapping
     public List<WorkoutSession> getAllSessions() {
+        System.out.println("Get all sessions");
         return repository.findAll();
     }
 
     @PostMapping
-    public WorkoutSession getSession(@RequestBody WorkoutSession session) {
+    public WorkoutSession createSession(@RequestBody WorkoutSession session) {
+        System.out.println("Received: " + session);
+        System.out.println(session.getDate() + " " + session.getNotes());
         return repository.save(session);
     }
 
