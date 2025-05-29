@@ -41,6 +41,22 @@ function App() {
     .catch(err => console.error(err))
   }
 
+  const handleDelete = async (id: number) => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/sessions/${id}`, {
+        method: 'DELETE',
+      });
+  
+      if (response.ok) {
+        setSessions((prevSessions) => prevSessions.filter((s) => s.id !== id));
+      } else {
+        console.error("Failed to delete session");
+      }
+    } catch (error) {
+      console.error("Error deleting session:", error);
+    }
+  }
+
   return (
     <div>
       <h1>Workout Sessions</h1>
@@ -53,6 +69,7 @@ function App() {
         {sessions.map(session => (
           <li key={session.id}>
             {session.date}: {session.notes}
+            <button onClick={() => handleDelete(session.id)}>Delete</button>
           </li>
         ))}
       </ul>

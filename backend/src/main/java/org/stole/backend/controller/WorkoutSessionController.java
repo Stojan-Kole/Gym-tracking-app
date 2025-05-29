@@ -23,18 +23,22 @@ public class WorkoutSessionController {
     public List<WorkoutSession> getAllSessions() {
         System.out.println("Get all sessions");
         return repository.findAll();
+
     }
 
     @PostMapping
     public WorkoutSession createSession(@RequestBody WorkoutSession session) {
         System.out.println("Received: " + session);
-        System.out.println(session.getDate() + " " + session.getNotes());
+        for (WorkoutSession s: repository.findAll()) {
+            System.out.println(s.getDate() + " " + s.getNotes());
+        }
         return repository.save(session);
     }
 
     @DeleteMapping("/{id}")
     public void deleteSession(@PathVariable Long id) {
         repository.deleteById(id);
+
     }
 
 }
