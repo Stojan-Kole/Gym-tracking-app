@@ -1,11 +1,16 @@
 package org.stole.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "id")
 @Entity
 public class Exercise {
 
@@ -15,25 +20,24 @@ public class Exercise {
 
     private String name;
 
-    @Column(columnDefinition = "TEXT")
-    private String setsJson;
-
     @ElementCollection(targetClass = MuscleGroup.class)
     @CollectionTable(name = "exercise_muscle_groups", joinColumns = @JoinColumn(name = "exercise_id"))
     @Enumerated(EnumType.STRING)
     private Set<MuscleGroup> muscleGroups;
 
-
     @ManyToOne
     @JoinColumn(name = "session_id", nullable = false)
+    @JsonBackReference
     private WorkoutSession session;
+
+    @OneToMany(mappedBy = "exercise", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SetEntry> sets = new ArrayList<>();
 
     // Constructors
     public Exercise() {}
 
-    public Exercise(String name, String setsJson, Set<MuscleGroup> muscleGroups) {
+    public Exercise(String name, Set<MuscleGroup> muscleGroups) {
         this.name = name;
-        this.setsJson = setsJson;
         this.muscleGroups = muscleGroups;
     }
 
@@ -46,15 +50,15 @@ public class Exercise {
 
     public void setName(String name) { this.name = name; }
 
-    public String getSetsJson() { return setsJson; }
+    public Set<MuscleGroup> getMuscleGroups() { return muscleGroups; }
 
-    public void setSetsJson(String setsJson) { this.setsJson = setsJson; }
+    public void setMuscleGroups(Set<MuscleGroup> muscleGroups) { this.muscleGroups = muscleGroups; }
 
     public WorkoutSession getSession() { return session; }
 
     public void setSession(WorkoutSession session) { this.session = session; }
 
-    public Set<MuscleGroup> getMuscleGroups() {
-        return muscleGroups;
-    }
+    public List<SetEntry> getSets() { return sets; }
+
+    public void setSets(List<SetEntry> sets) { this.sets = sets; }
 }

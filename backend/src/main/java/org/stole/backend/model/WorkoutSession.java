@@ -1,5 +1,8 @@
 package org.stole.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
@@ -8,6 +11,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "id")
 @Entity
 public class WorkoutSession {
 
@@ -26,11 +32,14 @@ public class WorkoutSession {
     private String notes;
 
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<Exercise> exercises;
 
     private Long userId;
 
-    public WorkoutSession() {}
+    public WorkoutSession() {
+        this.exercises = new ArrayList<>();
+    }
 
     public WorkoutSession(String name, LocalDateTime dateTime, String notes) {
         this.name = name;

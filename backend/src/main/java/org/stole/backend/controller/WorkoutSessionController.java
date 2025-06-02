@@ -2,13 +2,16 @@ package org.stole.backend.controller;
 
 import org.springframework.web.bind.annotation.*;
 
-import org.stole.backend.model.Exercise;
-import org.stole.backend.model.WorkoutSession;
-import org.stole.backend.repository.ExerciseRepository;
+import org.stole.backend.dto.WorkoutSessionRequest;
+import org.stole.backend.dto.ExerciseRequest;
+import org.stole.backend.dto.SetEntryRequest;
+
+import org.stole.backend.model.*;
 import org.stole.backend.repository.WorkoutSessionRepository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @CrossOrigin(origins = "http://localhost:5173")
@@ -17,49 +20,77 @@ import java.util.stream.Collectors;
 public class WorkoutSessionController {
 
     private final WorkoutSessionRepository sessionRepository;
-    private final ExerciseRepository exerciseRepository;
 
-    public WorkoutSessionController(WorkoutSessionRepository sessionRepository, ExerciseRepository exerciseRepository) {
+    public WorkoutSessionController(WorkoutSessionRepository sessionRepository) {
         this.sessionRepository = sessionRepository;
-        this.exerciseRepository = exerciseRepository;
     }
 
     @GetMapping
     public List<WorkoutSession> getAllSessions() {
         System.out.println("Get all sessions");
         return sessionRepository.findAll();
-
     }
 
     @PostMapping
-    public WorkoutSession createSession(@RequestBody WorkoutSession request) {
+    public WorkoutSession createSession(@RequestBody WorkoutSessionRequest request) {
         WorkoutSession session = new WorkoutSession();
 
-        session.setMuscleGroups(request.getMuscleGroups());
+        // Convert muscle groups from String to enum
+        Set<MuscleGroup> muscleGroups = request.getMuscleGroups().stream()
+                .map(MuscleGroup::valueOf)
+                .collect(Collectors.toSet());
+
+        session.setMuscleGroups(muscleGroups);
         session.setDateTime(request.getDateTime());
         session.setNotes(request.getNotes());
         session.setUserId(request.getUserId());
 
-        String name = request.getMuscleGroups().stream()
-                .map(Enum::name).collect(Collectors.joining("_"));
+        String name = muscleGroups.stream()
+                .map(Enum::name)
+                .collect(Collectors.joining("_"));
         session.setName(name);
 
-        List<Exercise> exercises = exerciseRepository.findByMuscleGroupsIn(new ArrayList<>(request.getMuscleGroups()));
-        for (Exercise ex : exercises) {
-            Exercise copy = new Exercise(ex.getName(), ex.getSetsJson(), ex.getMuscleGroups());
-            copy.setSession(session);
-            session.getExercises().add(copy);
+        session.setExercises(new ArrayList<>());
+
+        // Map exercises with nested sets
+        if (request.getExercises() != null) {
+            for (ExerciseRequest exReq : request.getExercises()) {
+                Exercise exercise = new Exercise();
+                exercise.setName(exReq.getName());
+
+                // Convert muscle groups of exercise
+                if (exReq.getMuscleGroups() != null) {
+                    Set<MuscleGroup> exerciseMuscleGroups = exReq.getMuscleGroups().stream()
+                            .map(MuscleGroup::valueOf)
+                            .collect(Collectors.toSet());
+                    exercise.setMuscleGroups(exerciseMuscleGroups);
+                }
+
+                exercise.setSession(session);
+
+                // Convert sets to SetEntry list
+                List<SetEntry> sets = new ArrayList<>();
+                if (exReq.getSets() != null) {
+                    for (SetEntryRequest setReq : exReq.getSets()) {
+                        SetEntry setEntry = new SetEntry();
+                        setEntry.setReps(setReq.getReps());
+                        setEntry.setWeight(setReq.getWeight());
+                        setEntry.setExercise(exercise);
+                        sets.add(setEntry);
+                    }
+                }
+                exercise.setSets(sets);
+
+                session.getExercises().add(exercise);
+            }
         }
 
         return sessionRepository.save(session);
-
     }
 
     @DeleteMapping("/{id}")
     public void deleteSession(@PathVariable Long id) {
         System.out.println("Delete session: " + id);
         sessionRepository.deleteById(id);
-
     }
-
 }
